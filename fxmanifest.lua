@@ -15,11 +15,19 @@ server_scripts  {
 ui_page 'html/index.html'
 
 files {
-    'html/index.html',
+	--[[original
+    'html/*.html',
     'html/style.css',
     'html/reset.css',
     'html/profanity.js',
     'html/script.js'
+	]]
+	'html/*.html',
+    'html/*.css',
+    'html/*.js',
+    'html/*.mp3',
+    'html/*.wav',
+    'html/*.png',
 }
 
 dependencies {

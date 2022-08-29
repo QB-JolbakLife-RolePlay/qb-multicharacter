@@ -37,18 +37,27 @@ end
 
 local function openCharMenu(bool)
     QBCore.Functions.TriggerCallback("qb-multicharacter:server:GetNumberOfCharacters", function(result)
-        SetNuiFocus(bool, bool)
-        SendNUIMessage({
-            action = "ui",
-            toggle = bool,
-            nChar = result,
-            enableDeleteButton = Config.EnableDeleteButton,
-        })
-        skyCam(bool)
-    end)
+		QBCore.Functions.TriggerCallback("qb-multicharacter:server:GetCurrentPlayers", function(players)
+			SetNuiFocus(bool, bool)
+			SendNUIMessage({
+				action = "ui",
+				toggle = bool,
+				nChar = result,
+				enableDeleteButton = Config.EnableDeleteButton,
+				players = players,
+			})
+			skyCam(bool)
+		end)
+	end)
 end
 
 -- Events
+
+AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
+    SendNUIMessage({
+        action = "stopMusic"
+    })
+end)
 
 RegisterNetEvent('qb-multicharacter:client:closeNUIdefault', function() -- This event is only for no starting apartments
     DeleteEntity(charPed)
@@ -78,11 +87,13 @@ RegisterNetEvent('qb-multicharacter:client:chooseChar', function()
     SetNuiFocus(false, false)
     DoScreenFadeOut(10)
     Wait(1000)
-    local interior = GetInteriorAtCoords(Config.Interior.x, Config.Interior.y, Config.Interior.z - 18.9)
-    LoadInterior(interior)
-    while not IsInteriorReady(interior) do
-        Wait(1000)
-    end
+	if Config.Interior then
+		local interior = GetInteriorAtCoords(Config.Interior.x, Config.Interior.y, Config.Interior.z - 18.9)
+		LoadInterior(interior)
+		while not IsInteriorReady(interior) do
+			Wait(1000)
+		end
+	end
     FreezeEntityPosition(PlayerPedId(), true)
     SetEntityCoords(PlayerPedId(), Config.HiddenCoords.x, Config.HiddenCoords.y, Config.HiddenCoords.z)
     Wait(1500)
@@ -120,9 +131,10 @@ RegisterNUICallback('cDataPed', function(nData, cb)
     SetEntityAsMissionEntity(charPed, true, true)
     DeleteEntity(charPed)
     if cData ~= nil then
-        QBCore.Functions.TriggerCallback('qb-multicharacter:server:getSkin', function(model, data)
-            model = model ~= nil and tonumber(model) or false
-            if model ~= nil then
+        QBCore.Functions.TriggerCallback('qb-multicharacter:server:getSkin', function(skinData)
+			local model
+            if skinData then
+                model = joaat(skinData.model)
                 CreateThread(function()
                     RequestModel(model)
                     while not HasModelLoaded(model) do
@@ -134,8 +146,9 @@ RegisterNUICallback('cDataPed', function(nData, cb)
                     SetEntityInvincible(charPed, true)
                     PlaceObjectOnGroundProperly(charPed)
                     SetBlockingOfNonTemporaryEvents(charPed, true)
-                    data = json.decode(data)
-                    TriggerEvent('qb-clothing:client:loadPlayerClothing', data, charPed)
+                    --skinData = json.decode(skinData)
+                    --TriggerEvent('qb-clothing:client:loadPlayerClothing', skinData, charPed)
+					exports['fivem-appearance']:setPedAppearance(charPed, skinData)
                 end)
             else
                 CreateThread(function()
